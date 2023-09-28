@@ -49,3 +49,8 @@ an optional feature.
 
 I would also like to change the color of the command prompt depending on the workspace and this is also the only reason why
 I'm using batch scripting over powershell for right now. But I won't leave out powershell.
+
+I would also like to add a productive mode to the script to toggle between productive mode and normal mode. The productive
+mode would make the program run on startup and start things up in a way that promotes focus on the current task and
+reduces distractions. When set to normal mode, the program won't run and will simply be in an idle state or can simply
+be terminated from there.
