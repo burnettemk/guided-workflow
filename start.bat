@@ -1,2 +1,2 @@
 @echo off
-start window.py
+start start.py
