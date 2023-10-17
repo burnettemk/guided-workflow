@@ -1,9 +1,6 @@
 import subprocess
 from os.path import exists
 
-# subprocess.call('test.bat')
-# subprocess.call('start.bat')
-
 print("\nWelcome!\n")
 
 workspaces = []
@@ -25,12 +22,34 @@ for n in workspaces:
 # Check for folder existence. It it exists, open file explorer in that folder and run created .bat file
 
 # Create Workspace folder
-# folder_name = createDirectory
-if exists(workspace + '.bat'):
-  print("")
-  # run associated .bat program to open all files
-  #f = open(workspace + '.bat')
-  #f.close
+file_path = 'data/' + workspace + '/' + workspace + '.bat'
+
+if exists('data/' + workspace + '/' + workspace + '.bat'):
+
+  # Call start.bat to run the workspace
+  print("Starting workspace...")
+  
+  return_code = subprocess.call('start.bat ' + 'data/' + workspace + ' ' + workspace + '.bat')
+  if return_code == 0:
+    print("Command executed successfully.")
+  else:
+    print("Command failed with return code", return_code)
+
+  # Find directory
+  f = open('data/directoryList.txt')
+  for dir in f:
+    if dir.__contains__(workspace):
+
+      # Open Workspace Directory
+      print("Opening workspace folder...")
+
+      return_code = subprocess.call(['start', 'C:\Windows\explorer', dir], shell=True)
+      if return_code == 0:
+        print("Command executed successfully.")
+      else:
+        print("Command failed with return code", return_code)
+  f.close
+
 else:
   print("\nNo workspace named '" + workspace + "' is available")
   # prompt user again

@@ -1,2 +1,3 @@
 @echo off
-start start.py
+cd %1
+start %2
