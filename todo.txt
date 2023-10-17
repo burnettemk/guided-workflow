@@ -1,0 +1,9 @@
+Consider switching from calling start.bat to opening a subprocess with shell=True in start.py
+
+Write 'create workspace' code
+- setup prompts
+- parse input
+- write code as a 'procedure' i.e. think of it as a procedure that can be transferred and translated
+    (will be used in the future for creating a window)
+
+Create directory 'workspaces' and add associated .bat or .cmd files for prompts
