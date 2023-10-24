@@ -1,4 +1,5 @@
 Consider switching from calling start.bat to opening a subprocess with shell=True in start.py
+    - subprocess keeps interpreting the filepath as the command to execute
 
 Write 'create workspace' code
 - setup prompts
