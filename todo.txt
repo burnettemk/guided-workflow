@@ -2,9 +2,10 @@ Consider switching from calling start.bat to opening a subprocess with shell=Tru
     - subprocess keeps interpreting the filepath as the command to execute
 
 Write 'create workspace' code
-- setup prompts
 - parse input
-- write code as a 'procedure' i.e. think of it as a procedure that can be transferred and translated
-    (will be used in the future for creating a window)
 
 Create directory 'workspaces' and add associated .bat or .cmd files for prompts
+
+Learn more about the subprocess and os modules
+
+Repopulate data folder with .bat files
