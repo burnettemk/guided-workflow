@@ -16,13 +16,37 @@ def create_workspace():
   # Prompt user for application path
 
 
+def run_subprocess(process):
+  if process == "explorer":
+    return_code = subprocess.call(['start', 'C:\Windows\explorer', workspace], shell=True)
+    if return_code == 0:
+      print("Command executed successfully.")
+    else:
+      print("Command failed with return code", return_code)
+  elif process == "cmd":
+    os.chdir('data')
+
+    return_code = subprocess.call([workspace + '.bat'], shell=True)
+    if return_code == 0:
+      print("Command executed successfully.")
+    else:
+      print("Command failed with return code", return_code)
+    
+    os.chdir(cwd)
+
+
+def generate_bat():
+  print()
+
+
 if __name__ == "__main__":
+  cwd = os.getcwd()
   print("\nWelcome!\n")
 
   workspaces = []
 
   if exists("data") == False:
-    subprocess.run(["mkdir", "data"], shell=True)
+    os.mkdir("data")
 
   if exists("data\workspaces.txt"):
     print("Available Workspaces: ")
@@ -40,47 +64,42 @@ if __name__ == "__main__":
       print("Program closed.")
       exit()
 
-
-
   workspace = input("Choose your workspace: ")
 
   for n in workspaces:
     if workspace == n:
       print("You've chosen to work with: " + n)
 
-  # Check for folder existence. It it exists, open file explorer in that folder and run created .bat file
+  # Check for folder existence. If it exists, open file explorer in that folder and run created .bat file
 
   # Create Workspace folder
-  file_path = 'data/' + workspace + '/' + workspace + '.bat'
+  file_path = 'data/' + workspace + '.bat'
 
-  if exists('data/' + workspace + '/' + workspace + '.bat'):
+  if exists(file_path):
 
     # Call start.bat to run the workspace
     print("Starting workspace...")
-    
-    return_code = subprocess.call('start.bat ' + 'data/' + workspace + ' ' + workspace + '.bat')
-    if return_code == 0:
-      print("Command executed successfully.")
-    else:
-      print("Command failed with return code", return_code)
+
+    run_subprocess("cmd")
 
     # Find directory
     f = open('data/directoryList.txt')
-    for dir in f:
-      if dir.__contains__(workspace):
+    os.chdir('C:/Users/waffl/Workspaces')
 
-        # Open Workspace Directory
-        print("Opening workspace folder...")
-
-        return_code = subprocess.call(['start', 'C:\Windows\explorer', dir], shell=True)
-        if return_code == 0:
-          print("Command executed successfully.")
-        else:
-          print("Command failed with return code", return_code)
+    if exists(workspace):
+      print("Opening workspace folder...")
+      run_subprocess("explorer")
+    else:
+      print("Creating workspace folder...")
+      os.mkdir(workspace)
+      run_subprocess("explorer")
+    
     f.close
 
+    os.chdir(cwd)
+
   else:
-    print("\nNo workspace named '" + workspace + "' is available")
+    print("Associated .bat or .cmd file not found.\nGenerating new .bat file...")
     # prompt user again
 
   # subprocess.call(["src\createDir.bat", workspace])

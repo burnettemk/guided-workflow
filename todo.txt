@@ -1,11 +1,10 @@
-Consider switching from calling start.bat to opening a subprocess with shell=True in start.py
-    - subprocess keeps interpreting the filepath as the command to execute
-
 Write 'create workspace' code
 - parse input
 
-Create directory 'workspaces' and add associated .bat or .cmd files for prompts
+Create directory 'workspaces' and add associated .bat or .cmd files from prompts
 
 Learn more about the subprocess and os modules
 
-Repopulate data folder with .bat files
+write generate_bat()
+
+incorporate tkinter fileselector
