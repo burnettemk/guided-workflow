@@ -8,3 +8,5 @@ Learn more about the subprocess and os modules
 write generate_bat()
 
 incorporate tkinter fileselector
+ - figure out how to import filedialog into start.py
+ - or figure out how to incorporate tkinter filedialog into start.py or put workspace creation into a separate folder

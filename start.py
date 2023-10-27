@@ -1,6 +1,7 @@
 import subprocess
 import os
 from os.path import exists
+from filedialog import open_dialog
 
 def create_workspace():
   # Prompt User for details
@@ -65,6 +66,15 @@ if __name__ == "__main__":
       exit()
 
   workspace = input("Choose your workspace: ")
+  
+  match workspace:
+    case 'exit':
+      print("Closing program...")
+      exit()
+    case 'new':
+      create_workspace()
+    case 'n':
+      create_workspace()
 
   for n in workspaces:
     if workspace == n:
