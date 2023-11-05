@@ -3,13 +3,6 @@ from tkinter import ttk
 from tkinter import filedialog as fd
 from tkinter.messagebox import showinfo
 
-# create the root window
-root = tk.Tk()
-root.title('Tkinter Open File Dialog')
-root.resizable(False, False)
-root.geometry('300x150')
-
-
 def select_file():
     filetypes = (
         # ('text files', '*.txt'),
@@ -41,17 +34,20 @@ def select_file():
         message=directory
     )
 
+if __name__ == "__main__":
+    # create the root window
+    root = tk.Tk()
+    root.title('Tkinter Open File Dialog')
+    root.resizable(False, False)
+    root.geometry('300x150')
 
-# open button
-open_button = ttk.Button(
-    root,
-    text='Open a File',
-    command=select_file
-)
+    # open button
+    open_button = ttk.Button(
+        root,
+        text='Open a File',
+        command=select_file
+    )
 
-open_button.pack(expand=True)
+    open_button.pack(expand=True)
 
-
-def open_dialog():
-    # run the application
     root.mainloop()
