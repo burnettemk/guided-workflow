@@ -1,14 +1,14 @@
 import subprocess
 import os
 from os.path import exists
-from filedialog import open_dialog
+
 
 def create_workspace():
   # Prompt User for details
   print("Give this workspace a name: \n")
   workspace_name = input()
-  f = open("data\workspaces.txt", 'w')
-  f.write(workspace_name)
+  f = open("data/workspaces.txt", 'a')
+  f.write('\n' + workspace_name)
   f.close()
 
   # Create Directory
@@ -17,9 +17,9 @@ def create_workspace():
   # Prompt user for application path
 
 
-def run_subprocess(process):
+def run_subprocess(process, cwd = "", workspace = ""):
   if process == "explorer":
-    return_code = subprocess.call(['start', 'C:\Windows\explorer', workspace], shell=True)
+    return_code = subprocess.call(['start', 'C:/Windows/explorer', workspace], shell=True)
     if return_code == 0:
       print("Command executed successfully.")
     else:
@@ -49,9 +49,9 @@ if __name__ == "__main__":
   if exists("data") == False:
     os.mkdir("data")
 
-  if exists("data\workspaces.txt"):
+  if exists("data/workspaces.txt"):
     print("Available Workspaces: ")
-    f = open("data\workspaces.txt", "r")
+    f = open("data/workspaces.txt", "r")
     for x in f:
       workspaces.append(x.replace('\n', ''))
       print(x)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     elif res == 'N' or res == 'n':
       print("Program closed.")
       exit()
-
+  
   workspace = input("Choose your workspace: ")
   
   match workspace:
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # Call start.bat to run the workspace
     print("Starting workspace...")
 
-    run_subprocess("cmd")
+    run_subprocess("cmd", cwd, workspace)
 
     # Find directory
     f = open('data/directoryList.txt')
@@ -98,11 +98,11 @@ if __name__ == "__main__":
 
     if exists(workspace):
       print("Opening workspace folder...")
-      run_subprocess("explorer")
+      run_subprocess("explorer", workspace)
     else:
       print("Creating workspace folder...")
       os.mkdir(workspace)
-      run_subprocess("explorer")
+      run_subprocess("explorer", workspace)
     
     f.close
 
