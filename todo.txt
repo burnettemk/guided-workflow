@@ -1,10 +1,5 @@
-Write 'create workspace' code
-- parse input
-
-Create directory 'workspaces' and add associated .bat or .cmd files from prompts
-
 Learn more about the subprocess and os modules
 
-write generate_bat()
+Write while loop to keep program open and allow for user to start a new workspace
 
-Write applicaition using just the terminal
+Thoroughly test and review program
