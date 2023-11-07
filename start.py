@@ -14,7 +14,8 @@ def create_workspace():
   # Create Directory
   os.mkdir("C:/Users/waffl/Workspaces/" + workspace_name)
 
-  # Prompt user for application path
+  # Generate batch file
+  generate_bat(workspace_name)
 
 
 def run_subprocess(process, cwd = "", workspace = ""):
@@ -36,8 +37,56 @@ def run_subprocess(process, cwd = "", workspace = ""):
     os.chdir(cwd)
 
 
-def generate_bat():
-  print()
+def generate_bat(wrkspc_name: str):
+  workspace = wrkspc_name
+  wrkspc_dir : str = ""
+  wrkspc_file : str = ""
+  cont = True
+
+  while cont:
+    wrkspc_dir = input("Paste the path of the directory of the file you wish to open: ")
+    wrkspc_file = input("Paste the name of the file you wish to open: ")
+
+    f = open("data/" + wrkspc_name + '.bat', 'x')
+    f.write("@echo off\n")
+    f.write("cd " + '\"' + wrkspc_dir + '\"' + '\n')
+    f.write("start " + wrkspc_file + '\n')
+
+    if input("Do you want to add another file/program? Y/N ") == 'N' or 'n':
+      cont = False
+  
+  f.close()
+
+
+def start_workspace(wrkspc_name : str):
+  # Check for folder existence. If it exists, open file explorer in that folder and run created .bat file
+  file_path = 'data/' + workspace + '.bat'
+
+  if exists(file_path):
+
+    # Call start.bat to run the workspace
+    print("Starting workspace...")
+
+    run_subprocess("cmd", cwd, workspace)
+
+    # Find directory
+    os.chdir('C:/Users/waffl/Workspaces')
+
+    if exists(workspace):
+      print("Opening workspace folder...")
+      run_subprocess("explorer", workspace)
+    else:
+      print("Creating workspace folder...")
+      os.mkdir(workspace)
+      run_subprocess("explorer", workspace)
+
+    os.chdir(cwd)
+  else:
+    print("Associated .bat or .cmd file not found.\nGenerating new .bat file...")
+    generate_bat(workspace)
+
+    start_workspace(workspace)
+
 
 
 if __name__ == "__main__":
@@ -67,49 +116,20 @@ if __name__ == "__main__":
   
   workspace = input("Choose your workspace: ")
   
+  if workspace != 'n' or 'new':
+    for n in workspaces:
+      if workspace == n:
+        print("You've chosen to work with: " + n)
+        start_workspace(workspace)
+  
   match workspace:
     case 'exit':
       print("Closing program...")
       exit()
     case 'new':
       create_workspace()
+      start_workspace(workspace)
     case 'n':
       create_workspace()
+      start_workspace(workspace)
 
-  for n in workspaces:
-    if workspace == n:
-      print("You've chosen to work with: " + n)
-
-  # Check for folder existence. If it exists, open file explorer in that folder and run created .bat file
-
-  # Create Workspace folder
-  file_path = 'data/' + workspace + '.bat'
-
-  if exists(file_path):
-
-    # Call start.bat to run the workspace
-    print("Starting workspace...")
-
-    run_subprocess("cmd", cwd, workspace)
-
-    # Find directory
-    f = open('data/directoryList.txt')
-    os.chdir('C:/Users/waffl/Workspaces')
-
-    if exists(workspace):
-      print("Opening workspace folder...")
-      run_subprocess("explorer", workspace)
-    else:
-      print("Creating workspace folder...")
-      os.mkdir(workspace)
-      run_subprocess("explorer", workspace)
-    
-    f.close
-
-    os.chdir(cwd)
-
-  else:
-    print("Associated .bat or .cmd file not found.\nGenerating new .bat file...")
-    # prompt user again
-
-  # subprocess.call(["src\createDir.bat", workspace])
