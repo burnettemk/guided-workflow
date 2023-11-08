@@ -1,5 +1,0 @@
-Learn more about the subprocess and os modules
-
-Write while loop to keep program open and allow for user to start a new workspace
-
-Thoroughly test and review program
