@@ -1,8 +1,10 @@
-# guided-workflow
+# guided-workflow [Done]
 
-my own personal system for focus and productivity
+My own personal system for focus and productivity
 
 The main purpose of the system is to increase focus while I work on various projects or other artistic endeavors.
+
+[Edit]: I have been able to meet most of my projects goals, and the project has been sucessfully setup to use just the terminal and not any sort of GUI. You can open any workspace and create new ones but need to close them manually. For now, I'm not going to continue to work on this project since I feel like it has lost it's interest. I could come back to work on it some more in the future.
 
 ## The program life cycle
 
