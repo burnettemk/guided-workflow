@@ -12,19 +12,20 @@ class WorkspaceManagerApp:
         self.root.title("Workspace Manager")
         self.root.geometry("1200x800")
 
-        # Initialize workspace storage
-        self.workspaces_file = "workspaces.json"
-        self.workspaces = self.load_workspaces()
-
         # Define data path where workspaces and related files are stored
         self.data_path = "data"
         if not os.path.exists(self.data_path):
             os.makedirs(self.data_path)
+
+        # Initialize workspace storage
+        self.workspaces_file = os.path.join(self.data_path, "workspaces.json")
+        self.workspaces = self.load_workspaces()
         
         # Layout
         self.create_layout()
 
         # Define class variables for the workspace formats
+        self.apps_var = "applications"
         self.paths_var = "paths"
         self.dir_var = "working_dir"
 
@@ -53,7 +54,7 @@ class WorkspaceManagerApp:
 
         # Edit Button
         self.button_edit = tk.Button(
-            self.sidebar, text="Edit Workspace", command=self.edit_workspace
+            self.sidebar, text="Edit Workspace", command=self.edit_selected_workspace
         )
         self.button_edit.pack(fill=tk.X, padx=5, pady=5)
 
@@ -101,7 +102,7 @@ class WorkspaceManagerApp:
     def save_workspaces(self):
         """Save workspace data to JSON."""
         with open(self.workspaces_file, "w") as file:
-            json.dump(self.workspaces, file, indent=4) # No data is being dumped because we're not using a json object
+            json.dump(self.workspaces, file, indent=4)
 
     def populate_workspaces(self):
         """Populate the listbox with workspace names."""
@@ -126,7 +127,7 @@ class WorkspaceManagerApp:
             messagebox.showerror("Error", "Workspace name already exists.")
             return
 
-        self.workspaces[workspace_name] = {"applications": []}
+        self.workspaces[workspace_name] = {self.apps_var: []}
 
         working_dir = filedialog.askdirectory(
                 title="Select a working directory (or create one):"
@@ -141,7 +142,7 @@ class WorkspaceManagerApp:
                 working_dir = new_dir
         
         self.workspaces[workspace_name][self.dir_var] = working_dir or None
-        self.workspaces[workspace_name]["applications"] = {self.paths_var: []}
+        self.workspaces[workspace_name][self.apps_var] = {self.paths_var: []}
         
         while True:
             app_path = filedialog.askopenfilename(
@@ -150,7 +151,7 @@ class WorkspaceManagerApp:
             if not app_path:
                 break
 
-            self.workspaces[workspace_name]["applications"][self.paths_var].append(app_path)
+            self.workspaces[workspace_name][self.apps_var][self.paths_var].append(app_path)
 
             if not messagebox.askyesno("Add More?", "Would you like to add another application?"):
                 break
@@ -178,7 +179,7 @@ class WorkspaceManagerApp:
         self.current_workspace = workspace_name
 
         # Check for an empty application list
-        apps = self.workspaces[workspace_name]["applications"][self.paths_var]
+        apps = self.workspaces[workspace_name][self.apps_var][self.paths_var]
         if not apps:
             messagebox.showinfo("Empty Workspace", "This workspace has no applications.")
             return
@@ -199,8 +200,8 @@ class WorkspaceManagerApp:
             return
 
         workspace_name = self.workspace_listbox.get(selected_index)
-        # apps = self.workspaces.get(workspace_name, {}).get("applications", [])
-        apps = self.workspaces[workspace_name]["applications"][self.paths_var]
+        # apps = self.workspaces.get(workspace_name, {}).get(self.apps_var, [])
+        apps = self.workspaces[workspace_name][self.apps_var][self.paths_var]
 
         self.apps_listbox.delete(0, tk.END)
         for app in apps:
@@ -232,27 +233,108 @@ class WorkspaceManagerApp:
             messagebox.showerror("Error", f"Workspace '{workspace_name}' not found.")
             return
         
-        print(f"Delete {workspace_name}")
-
-    def edit_workspace(self):
+        if messagebox.askyesnocancel("Confirm deletion", f"Are you sure you want to delete '{workspace_name}'?"):
+            self.workspaces.pop(workspace_name)
+            self.save_workspaces()
+            self.populate_workspaces()
+            messagebox.showinfo("Workspace Deleted", f"Workspace '{workspace_name}' was deleted!")
+        else:
+            return
+    
+    def edit_selected_workspace(self):
         # Check to see if a workspace is selected
         selected_index = self.workspace_listbox.curselection()
         if not selected_index:
-            messagebox.showwarning("Warning", "Please select a workspace.")
+            messagebox.showwarning("No Selection", "Please select a workspace to edit.")
             return
-        
-        # Look for workspace in JSON dictionary
-        workspace_name = self.workspace_listbox.get(selected_index)
-        if workspace_name not in self.workspaces:
-            messagebox.showerror("Error", f"Workspace '{workspace_name}' not found.")
+
+        workspace_name = self.workspace_listbox.get(selected_index[0])
+        workspace_data = self.workspaces.get(workspace_name)
+
+        if not workspace_data:
+            messagebox.showerror("Error", f"No data found for {workspace_name}.")
             return
-        
-        print(f"Edit {workspace_name}")
+
+        # Create edit window
+        edit_window = tk.Toplevel(self.root)
+        edit_window.title(f"Edit Workspace: {workspace_name}")
+        edit_window.grab_set()  # Focus on this window
+
+        # Edit working directory
+        tk.Label(edit_window, text="Working Directory:").pack(anchor="w")
+        working_dir_var = tk.StringVar(value=workspace_data["working_dir"])
+        working_dir_entry = tk.Entry(edit_window, textvariable=working_dir_var, width=50)
+        working_dir_entry.pack(fill=tk.X, padx=5, pady=5)
+
+        def select_working_dir():
+            selected_dir = filedialog.askdirectory(title="Select New Working Directory")
+            if selected_dir:
+                working_dir_var.set(selected_dir)
+            
+            # Bring the pop-up window back to focus
+            edit_window.deiconify()
+            edit_window.lift()
+
+        tk.Button(edit_window, text="Change Directory", command=select_working_dir).pack(anchor="w", padx=5)
+
+        # Edit application paths
+        tk.Label(edit_window, text="Applications:").pack(anchor="w")
+        apps_listbox = tk.Listbox(edit_window, height=10)
+        apps_listbox.pack(fill=tk.BOTH, padx=5, pady=5)
+
+        for path in workspace_data["applications"]["paths"]:
+            apps_listbox.insert(tk.END, path)
+
+        def add_application():
+            file_path = filedialog.askopenfilename(title="Select Application")
+            if file_path:
+                apps_listbox.insert(tk.END, file_path)
+            
+            # Bring the pop-up window back to focus
+            edit_window.deiconify()
+            edit_window.lift()
+
+        def remove_selected_application():
+            selected = apps_listbox.curselection()
+            for index in selected[::-1]:
+                apps_listbox.delete(index)
+            
+            self.display_workspace_apps(None)
+
+        app_buttons_frame = tk.Frame(edit_window)
+        app_buttons_frame.pack(fill=tk.X)
+
+        tk.Button(app_buttons_frame, text="Add Application", command=add_application).pack(side=tk.LEFT, padx=5)
+        tk.Button(app_buttons_frame, text="Remove Selected", command=remove_selected_application).pack(side=tk.LEFT)
+
+        def save_changes():
+            new_working_dir = working_dir_var.get()
+            new_apps = [apps_listbox.get(i) for i in range(apps_listbox.size())]
+
+            self.workspaces[workspace_name] = {
+                "applications": {"paths": new_apps},
+                "working_dir": new_working_dir,
+            }
+            self.save_workspaces()
+
+            # Set the selection programmatically
+            index = self.workspace_listbox.get(0, tk.END).index(workspace_name)
+            self.workspace_listbox.selection_clear(0, tk.END)
+            self.workspace_listbox.selection_set(index)
+            self.workspace_listbox.activate(index)
+
+            self.display_workspace_apps(None)
+            edit_window.destroy()
+
+        tk.Button(edit_window, text="Save Changes", command=save_changes).pack(pady=10)
+
+        # Focus the pop-up window
+        edit_window.lift()
 
 
 if __name__ == "__main__":
     #root = tk.Tk()
-    root = ttk.Window(themename="darkly")
+    root = ttk.Window(themename="cyborg")
     
     # Load the image
     icon = tk.PhotoImage(file="test.png")
