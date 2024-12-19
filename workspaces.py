@@ -1,9 +1,12 @@
 import os
 import json
 import subprocess
+#import json
 import tkinter as tk
 import ttkbootstrap as ttk
 from tkinter import messagebox, filedialog, simpledialog
+#from processmonitor import ApplicationMonitor
+import processmonitor
 
 
 class WorkspaceManagerApp:
@@ -82,6 +85,9 @@ class WorkspaceManagerApp:
         self.workspace_listbox.bind("<<ListboxSelect>>", self.display_workspace_apps)
         self.populate_workspaces()
 
+        self.current_label = tk.Label(self.main_frame, text="")
+        self.current_label.pack(fill=tk.BOTH)
+
         # Side panel for workspace applications
         self.apps_panel = tk.Frame(self.root, width=250, bg="white")
         self.apps_panel.pack(side=tk.RIGHT, fill=tk.Y)
@@ -112,11 +118,8 @@ class WorkspaceManagerApp:
 
     def create_workspace(self):
         """Create a new workspace."""
-        workspace_name = filedialog.asksaveasfilename(
-            title="Enter a name for the workspace:",
-            defaultextension=".workspace",
-            filetypes=[("Workspace Files", "*.workspace")]
-        )
+        workspace_name = simpledialog.askstring(title="Enter name for the workspace",
+                                                 prompt="Enter a name for the workspace:")
 
         if not workspace_name:
             return
@@ -176,7 +179,10 @@ class WorkspaceManagerApp:
             return
 
         # Set current workspace
-        self.current_workspace = workspace_name
+        self.current_label["text"] = workspace_name
+        app_monitor = processmonitor.ApplicationMonitor(self.workspaces[workspace_name][self.apps_var])
+        self.start_monitoring(app_monitor)
+        print(app_monitor.get_allowed_apps())
 
         # Check for an empty application list
         apps = self.workspaces[workspace_name][self.apps_var][self.paths_var]
@@ -249,7 +255,8 @@ class WorkspaceManagerApp:
             return
 
         workspace_name = self.workspace_listbox.get(selected_index[0])
-        workspace_data = self.workspaces.get(workspace_name)
+        workspace_data = self.workspaces[workspace_name]
+        old_workspace_name = workspace_name
 
         if not workspace_data:
             messagebox.showerror("Error", f"No data found for {workspace_name}.")
@@ -259,6 +266,15 @@ class WorkspaceManagerApp:
         edit_window = tk.Toplevel(self.root)
         edit_window.title(f"Edit Workspace: {workspace_name}")
         edit_window.grab_set()  # Focus on this window
+
+        # Change name
+        name_frame = tk.Frame(edit_window)
+        name_frame.pack(padx=10, pady=10, fill=tk.X)
+
+        tk.Label(name_frame, text="Workspace Name:").pack(side=tk.LEFT)
+        name_entry = tk.Entry(name_frame)
+        name_entry.insert(0, old_workspace_name[:-10])  # Remove .workspace for display
+        name_entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
         # Edit working directory
         tk.Label(edit_window, text="Working Directory:").pack(anchor="w")
@@ -300,6 +316,25 @@ class WorkspaceManagerApp:
                 apps_listbox.delete(index)
             
             self.display_workspace_apps(None)
+        
+        def change_workspace_name(data, old_name, new_name):
+            """
+            Change a key in the dictionary while preserving the order of keys.
+
+            Parameters:
+            - d (dict): The original dictionary.
+            - old_key: The key to be replaced.
+            - new_key: The new key to replace the old one.
+
+            Returns:
+            - dict: A new dictionary with the updated key.
+            """
+            if old_name not in data:
+                raise KeyError(f"The key '{old_name}' does not exist in the dictionary.")
+            if new_name in data:
+                raise KeyError(f"The key '{new_name}' already exists in the dictionary.")
+            
+            return {new_name if key == old_name else key: value for key, value in data.items()}
 
         app_buttons_frame = tk.Frame(edit_window)
         app_buttons_frame.pack(fill=tk.X)
@@ -308,6 +343,14 @@ class WorkspaceManagerApp:
         tk.Button(app_buttons_frame, text="Remove Selected", command=remove_selected_application).pack(side=tk.LEFT)
 
         def save_changes():
+            new_workspace_name = name_entry.get().strip()
+            if not new_workspace_name:
+                pass
+            else:
+                # Rename property and update dictionary key
+                self.workspaces = change_workspace_name(self.workspaces, old_workspace_name, new_workspace_name)
+                workspace_name = new_workspace_name
+
             new_working_dir = working_dir_var.get()
             new_apps = [apps_listbox.get(i) for i in range(apps_listbox.size())]
 
@@ -316,6 +359,7 @@ class WorkspaceManagerApp:
                 "working_dir": new_working_dir,
             }
             self.save_workspaces()
+            self.populate_workspaces()
 
             # Set the selection programmatically
             index = self.workspace_listbox.get(0, tk.END).index(workspace_name)
@@ -331,6 +375,25 @@ class WorkspaceManagerApp:
         # Focus the pop-up window
         edit_window.lift()
 
+    def start_monitoring(self, app_monitor):
+        def monitor():
+            monitor = processmonitor.ApplicationMonitor(app_monitor.get_allowed_apps())
+            outside_apps = monitor.check_for_outside_apps()
+            if outside_apps:
+                warn_about_outside_apps(outside_apps)
+            # Call monitor again after 5000ms (5 seconds)
+            self.root.after(5000, monitor)
+
+        monitor()
+
+
+def warn_about_outside_apps(outside_apps):
+    if outside_apps:
+        message = "The following applications are running but are not part of the current workspace:\n\n"
+        message += "\n".join(outside_apps)
+        messagebox.showwarning("Outside Applications Detected", message)
+
+
 
 if __name__ == "__main__":
     #root = tk.Tk()
@@ -342,5 +405,7 @@ if __name__ == "__main__":
     # Set the icon
     root.iconphoto(False, icon)
 
+    # Create Workspace Manager from tkinter window
     app = WorkspaceManagerApp(root)
+    
     root.mainloop()
