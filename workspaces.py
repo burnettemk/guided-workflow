@@ -31,6 +31,7 @@ class WorkspaceManagerApp:
         self.apps_var = "applications"
         self.paths_var = "paths"
         self.dir_var = "working_dir"
+        self.playlist_var = "playlist"
 
         # Set persistent variable
         self.current_workspace = ""
@@ -85,6 +86,7 @@ class WorkspaceManagerApp:
         self.workspace_listbox.bind("<<ListboxSelect>>", self.display_workspace_apps)
         self.populate_workspaces()
 
+        # Display for currently opened workspace
         self.current_label = tk.Label(self.main_frame, text="")
         self.current_label.pack(fill=tk.BOTH)
 
@@ -141,11 +143,13 @@ class WorkspaceManagerApp:
                 new_dir = filedialog.asksaveasfilename(
                     title="Enter name for new directory:"
                 )
-                os.makedirs(new_dir, exist_ok=True)
-                working_dir = new_dir
+                if new_dir:
+                    os.makedirs(new_dir, exist_ok=True)
+                    working_dir = new_dir
         
         self.workspaces[workspace_name][self.dir_var] = working_dir or None
         self.workspaces[workspace_name][self.apps_var] = {self.paths_var: []}
+        self.workspaces[workspace_name][self.playlist_var] = ""
         
         while True:
             app_path = filedialog.askopenfilename(
@@ -158,6 +162,12 @@ class WorkspaceManagerApp:
 
             if not messagebox.askyesno("Add More?", "Would you like to add another application?"):
                 break
+        
+        if messagebox.askyesno("Add music playlist?", "Would you like to set a music playlist?"):
+            pl_file = filedialog.askopenfilename(
+                title="Select a playlist file to add to the workspace:"
+            )
+            self.workspaces[workspace_name][self.playlist_var] = pl_file
 
         self.save_workspaces()
         self.populate_workspaces()
@@ -184,7 +194,7 @@ class WorkspaceManagerApp:
         app_monitor = processmonitor.ApplicationMonitor(self.workspaces[workspace_name][self.apps_var])
         self.start_monitoring(app_monitor)
             # Get allowed apps
-        #print(app_monitor.get_allowed_apps())
+        print(app_monitor.get_allowed_apps())
 
         # Check for an empty application list
         apps = self.workspaces[workspace_name][self.apps_var][self.paths_var]
@@ -193,11 +203,16 @@ class WorkspaceManagerApp:
             return
 
         working_dir = self.workspaces[workspace_name][self.dir_var]
-        os.chdir(working_dir)
+        if working_dir:
+            os.chdir(working_dir)
 
         # Open each app
         for app in apps:
             self.open_application(app)
+        
+        playlist = self.workspaces[workspace_name][self.playlist_var]
+        if playlist:
+            self.start_playlist(playlist)
 
         messagebox.showinfo("Workspace Started", f"Workspace '{workspace_name}' started!")
 
@@ -227,7 +242,18 @@ class WorkspaceManagerApp:
                 print(f"Application not found: {app_path}")
         except Exception as e:
             print(f"Failed to start application: {e}")
-    
+
+    def start_playlist(self, playlist):
+        """Launch an application."""
+        try:
+            # Command to start VLC with the playlist file
+            command = ["start", "vlc", playlist]
+
+            # Execute the command using Popen
+            process = subprocess.Popen(command, shell=True)
+        except Exception as e:
+            print(f"Failed to start application: {e}")
+
     def delete_workspace(self):
         # Check to see if a workspace is selected
         selected_index = self.workspace_listbox.curselection()
@@ -270,19 +296,16 @@ class WorkspaceManagerApp:
         edit_window.grab_set()  # Focus on this window
 
         # Change name
-        name_frame = tk.Frame(edit_window)
-        name_frame.pack(padx=10, pady=10, fill=tk.X)
-
-        tk.Label(name_frame, text="Workspace Name:").pack(side=tk.LEFT)
-        name_entry = tk.Entry(name_frame)
+        tk.Label(edit_window, text="Workspace Name:").pack(anchor="w")
+        name_entry = tk.Entry(edit_window)
         name_entry.insert(0, old_workspace_name[:-10])  # Remove .workspace for display
-        name_entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
+        name_entry.pack(expand=True, fill=tk.X, padx=5, pady=(5, 10))
 
         # Edit working directory
         tk.Label(edit_window, text="Working Directory:").pack(anchor="w")
-        working_dir_var = tk.StringVar(value=workspace_data["working_dir"])
+        working_dir_var = tk.StringVar(value=workspace_data[self.dir_var])
         working_dir_entry = tk.Entry(edit_window, textvariable=working_dir_var, width=50)
-        working_dir_entry.pack(fill=tk.X, padx=5, pady=5)
+        working_dir_entry.pack(expand=True, fill=tk.X, padx=5, pady=5)
 
         def select_working_dir():
             selected_dir = filedialog.askdirectory(title="Select New Working Directory")
@@ -293,12 +316,29 @@ class WorkspaceManagerApp:
             edit_window.deiconify()
             edit_window.lift()
 
-        tk.Button(edit_window, text="Change Directory", command=select_working_dir).pack(anchor="w", padx=5)
+        tk.Button(edit_window, text="Change Directory", command=select_working_dir).pack(anchor="w", padx=5, pady=(0, 15))
+
+        # Add/Change playlist
+        tk.Label(edit_window, text="Playlist:").pack(anchor="w")
+        playlist_var = tk.StringVar(value=workspace_data[self.playlist_var])
+        if not playlist_var.get(): playlist_var.set("No playlist")
+        playlist_entry = tk.Label(edit_window, textvariable=playlist_var)
+        playlist_entry.pack(expand=True, padx=5, pady=(0, 5), anchor="w")
+
+        def select_playlist():
+            selected_playlist = filedialog.askopenfilename(title="Select the playlist that you'd like to add to the workspace")
+            if selected_playlist:
+                playlist_var.set(selected_playlist)
+            
+            edit_window.deiconify()
+            edit_window.lift()
+        
+        tk.Button(edit_window, text="Select Playlist", command=select_playlist).pack(anchor="w", padx=5, pady=(0, 15))
 
         # Edit application paths
-        tk.Label(edit_window, text="Applications:").pack(anchor="w")
+        tk.Label(edit_window, text="Applications:").pack(anchor="w", pady=(0, 5))
         apps_listbox = tk.Listbox(edit_window, height=10)
-        apps_listbox.pack(fill=tk.BOTH, padx=5, pady=5)
+        apps_listbox.pack(fill=tk.BOTH, padx=5, pady=(0, 5))
 
         for path in workspace_data["applications"]["paths"]:
             apps_listbox.insert(tk.END, path)
@@ -345,9 +385,12 @@ class WorkspaceManagerApp:
         tk.Button(app_buttons_frame, text="Remove Selected", command=remove_selected_application).pack(side=tk.LEFT)
 
         def save_changes():
+            # REMINDER: The local variable workspace_name from edit_workspace() is not the same variable that is used here somehow 
+
             new_workspace_name = name_entry.get().strip()
             if not new_workspace_name:
-                pass
+                # keep old name if new one is not defined
+                workspace_name = old_workspace_name
             else:
                 # Rename property and update dictionary key
                 self.workspaces = change_workspace_name(self.workspaces, old_workspace_name, new_workspace_name)
@@ -359,6 +402,7 @@ class WorkspaceManagerApp:
             self.workspaces[workspace_name] = {
                 "applications": {"paths": new_apps},
                 "working_dir": new_working_dir,
+                self.playlist_var: playlist_var.get()
             }
             self.save_workspaces()
             self.populate_workspaces()
