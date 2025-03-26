@@ -180,9 +180,11 @@ class WorkspaceManagerApp:
 
         # Set current workspace
         self.current_label["text"] = workspace_name
+            # Create the process monitor
         app_monitor = processmonitor.ApplicationMonitor(self.workspaces[workspace_name][self.apps_var])
         self.start_monitoring(app_monitor)
-        print(app_monitor.get_allowed_apps())
+            # Get allowed apps
+        #print(app_monitor.get_allowed_apps())
 
         # Check for an empty application list
         apps = self.workspaces[workspace_name][self.apps_var][self.paths_var]
@@ -378,6 +380,7 @@ class WorkspaceManagerApp:
     def start_monitoring(self, app_monitor):
         def monitor():
             monitor = processmonitor.ApplicationMonitor(app_monitor.get_allowed_apps())
+            # Get currently open apps
             outside_apps = monitor.check_for_outside_apps()
             if outside_apps:
                 warn_about_outside_apps(outside_apps)

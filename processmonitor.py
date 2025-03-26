@@ -22,7 +22,9 @@ class ApplicationMonitor:
 
     def check_for_outside_apps(self):
         running_apps = self.get_running_applications()
+        #print("ALLOWED APPS" + str(self.allowed_paths))
         outside_apps = running_apps - self.allowed_paths
+        #print(outside_apps)
         return outside_apps
     
     def get_allowed_apps(self):
